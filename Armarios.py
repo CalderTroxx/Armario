@@ -47,7 +47,7 @@ while(1):
                 Profesor = "Maico Zurbriggen"
             case "4":
                 Profesor = "Luciano Destefani"
-            case "5":
+            case "6":
                 Profesor = "Alejo Ferreyra"
 
         Herramienta=Herramienta.decode('ascii') 
