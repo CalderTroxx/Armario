@@ -60,9 +60,9 @@ byte Estano[4] = {0x0E, 0x7A, 0x3D, 0xC9} ;
 byte Flux[4] = {0xFE, 0x67, 0x3D, 0xC9} ;
 
 //DATOS A TRANSMITIR
-uint8_t Profesor = 0;
-uint8_t Herramienta = 0;
-uint8_t Evento = 0;
+String Profesor = "";
+String Herramienta = "";
+String Evento = "";
 
 //TRANSMICION RF
 String origen = "AR";
@@ -71,6 +71,11 @@ char buf[VW_MAX_MESSAGE_LEN];
 String str = "";
 bool CT = 0;
 
+bool stateOsci = 1;
+bool stateEstacion = 1;
+bool stateSoldador = 1;
+bool stateEstano = 1;
+bool stateFlux = 1;
 /////////////////SETUP/////////////////////
 
 void setup() {
@@ -92,20 +97,21 @@ void setup() {
   pinMode(6, OUTPUT); //Puerto de cerradura como salida
   Serial.begin(9600);
   //SENSOR DE HUELLA
-  Serial.println("Sistema de apertura con huella dactilar");
+  //Serial.println("Sistema de apertura con huella dactilar");
   finger.begin(57600);  // inicializa comunicacion con sensor a 57600 Baudios
   delay(5);
-  if (finger.verifyPassword())Serial.println("Detectado un sensor de huella!"); //Se muestra en el monitor serie.
+  if (finger.verifyPassword()) delay(1);//Serial.println("Detectado un sensor de huella!"); //Se muestra en el monitor serie.
   else { //Si no se encuentra al detector de huellas como si estuviese conectado...
-    Serial.println("No hay comunicacion con el sensor de huella");
-    Serial.println("Revise las conexiones");
+    //Serial.println("No hay comunicacion con el sensor de huella");
+    //Serial.println("Revise las conexiones");
+    delay(1);
     while (1) { //Se quedara en este mientras y no saldra de aqui hasta que se conecte el detector de huellas.
       delay(1);
     }
   }
   finger.getTemplateCount();
-  Serial.print("El sensor contiene "); Serial.print(finger.templateCount); Serial.println(" plantillas");
-  Serial.println("Esperando por una huella valida...");
+  //Serial.print("El sensor contiene "); Serial.print(finger.templateCount); Serial.println(" plantillas");
+  //Serial.println("Esperando por una huella valida...");
   //LEE ULTIMA ID CARGADA
   EEPROM.get(posicion, num);
 }
@@ -175,7 +181,7 @@ uint8_t Grabacion_Huellas() {//FUNCION PARA GRABAR LAS HUELLAS
       case FINGERPRINT_OK:
         lcd.setCursor(0, 1);
         lcd.print("HUELLA TOMADA   ");//PRIMER TOMA DE HUELLA
-        Serial.println("Huella tomada");
+        //Serial.println("Huella tomada");
         break;
     }
   }
@@ -204,17 +210,17 @@ uint8_t Grabacion_Huellas() {//FUNCION PARA GRABAR LAS HUELLAS
     }*/
   lcd.setCursor(0, 1);
   lcd.print("QUITE EL DEDO   ");//SE RETIRA EL DEDO CUANDO EL TEXTO LO INDIQUE
-  Serial.println("Quite el dedo");
+  //Serial.println("Quite el dedo");
   delay(2000);//ESPERA PARA QUE PUEDA LEERSE LA INSTRUCCION DE RETIRAR EL DEDO
   p = 0;
   while (p != FINGERPRINT_NOFINGER) {
     p = finger.getImage();
   }
-  Serial.print("ID "); Serial.println(id);
+  //Serial.print("ID "); Serial.println(id);
   p = -1;
   lcd.setCursor(0, 1);
   lcd.print("INGRESE HUELLA  ");//SEGUNDA LECTURA DE HUELLA
-  Serial.println("Coloque el mismo dedo de nuevo");
+  //Serial.println("Coloque el mismo dedo de nuevo");
   while (p != FINGERPRINT_OK) {
     p = finger.getImage();
     switch (p)
@@ -222,7 +228,7 @@ uint8_t Grabacion_Huellas() {//FUNCION PARA GRABAR LAS HUELLAS
       case FINGERPRINT_OK:
         lcd.setCursor(0, 0);
         lcd.print("HUELLA CARGADA  ");//LA HUELLA SE CARGO EXITOSAMENTE
-        Serial.println("Huella tomada");
+        //Serial.println("Huella tomada");
         break;
         /* case FINGERPRINT_NOFINGER:
            Serial.print(".");
@@ -264,7 +270,7 @@ uint8_t Grabacion_Huellas() {//FUNCION PARA GRABAR LAS HUELLAS
 
 
 
-  Serial.print("Creando modelo para #");  Serial.println(id);
+  //Serial.print("Creando modelo para #");  Serial.println(id);
 
   p = finger.createModel();
   /* if (p == FINGERPRINT_OK) {
@@ -283,7 +289,7 @@ uint8_t Grabacion_Huellas() {//FUNCION PARA GRABAR LAS HUELLAS
      return p;
     }*/
 
-  Serial.print("ID "); Serial.println(id);
+  //Serial.print("ID "); Serial.println(id);
   p = finger.storeModel(id);
   /* if (p == FINGERPRINT_OK) {
      Serial.println("Almacenado!");
@@ -318,11 +324,11 @@ int Confirmacion_Huella() {//ABRE EL ARMARIO CON LAS HUELLAS
 
   p = finger.fingerFastSearch();
 
-  if (finger.confidence > 100) {
+  if (finger.confidence > 50) {
 
     // Si hay coincidencias de huella
-    Serial.print("ID #"); Serial.print(finger.fingerID);
-    Serial.print("Coincidencia del "); Serial.println(finger.confidence);
+    //Serial.print("ID #"); Serial.print(finger.fingerID);
+    //Serial.print("Coincidencia del "); Serial.println(finger.confidence);
     Profesor = finger.fingerID;
 
     validation = 1;
@@ -336,7 +342,7 @@ int Confirmacion_Huella() {//ABRE EL ARMARIO CON LAS HUELLAS
     lcd.print("NO COINCIDE");
     lcd.setCursor(0, 1);
     lcd.print("                ");
-    Serial.println("Huella sin coincidencia");//LA HUELLA NO COINCIDE
+    //Serial.println("Huella sin coincidencia");//LA HUELLA NO COINCIDE
   }
 }
 
@@ -376,52 +382,55 @@ void abrir_cerradura() {//FUNCION PARA ABRIR EL ARMARIO
 
 void MATERIALES() { //FUNCION DE DETECCION DE MATERIALES
   if (mfrc522.PICC_IsNewCardPresent()) { //PREGUNTA SI HAY UN LLAVERO FRENTE AL RFID
-    Serial.println("hola");
+    //Serial.println("hola");
     CT = 1;
     if (mfrc522.PICC_ReadCardSerial()) { //PREGUNTA SI SE LEE UN LLAVERO
-      Serial.print("UID:");       // muestra texto UID:
+      //Serial.print("UID:");       // muestra texto UID:
       for (byte i = 0; i < mfrc522.uid.size; i++) { // bucle recorre de a un byte por vez el UID
         if (mfrc522.uid.uidByte[i] < 0x10) {  // si el byte leido es menor a 0x10
-          Serial.print(" 0");       // imprime espacio en blanco y numero cero
+          //Serial.print(" 0");       // imprime espacio en blanco y numero cero
         }
         else {          // sino
-          Serial.print(" ");        // imprime un espacio en blanco
+          //Serial.print(" ");        // imprime un espacio en blanco
         }
-        Serial.print(mfrc522.uid.uidByte[i], HEX);    // imprime el byte del UID leido en hexadecimal
+        //Serial.print(mfrc522.uid.uidByte[i], HEX);    // imprime el byte del UID leido en hexadecimal
         LecturaUID[i] = mfrc522.uid.uidByte[i];   // almacena en array el byte del UID leido
       }
 
-      Serial.print("\t");         // imprime un espacio de tabulacion
+      //Serial.print("\t");         // imprime un espacio de tabulacion
 
       if (comparaUID(LecturaUID, Osciloscopio)) {
-        bool state = 1;
-        Serial.println("Osciloscopio");
+
+        //Serial.println("Osciloscopio");
         Herramienta = "01";
-        Evento = !state;
+        Evento = stateOsci;
+        stateOsci = !stateOsci;
       }
       else if (comparaUID(LecturaUID, EstacionSoldado)) {
-        bool state = 1;
-        Serial.println("Estacion de Soldado");
+        //Serial.println("Estacion de Soldado");
         Herramienta = "02";
-        Evento = !state;
+        Evento = stateEstacion;
+        stateEstacion = !stateEstacion;
       }
       else if (comparaUID(LecturaUID, Soldador)) {
-        bool state = 1;
-        Serial.println("Soldador");
+
+        //Serial.println("Soldador");
         Herramienta = "03";
-        Evento = !state;
+        Evento = stateSoldador;
+        stateSoldador = !stateSoldador;
       }
       else if (comparaUID(LecturaUID, Estano)) {
-        bool state = 1;
-        Serial.println("Estaño");
+        //Serial.println("Estaño");
         Herramienta = "04";
-        Evento = !state;
+        Evento = stateEstano;
+        stateEstano = !stateEstano;
       }
       else if (comparaUID(LecturaUID, Flux)) {
-        bool state = 1;
-        Serial.println("Flux");
+
+        //Serial.println("Flux");
         Herramienta = "05";
-        Evento = !state;
+        Evento = stateFlux;
+        stateFlux = !stateFlux;
       }
       mfrc522.PICC_HaltA();     // detiene comunicacion con tarjeta
     }
@@ -439,11 +448,16 @@ boolean comparaUID(byte lectura[], byte usuario[]) { // FUNCION QUE COMPARA EL U
 }
 
 void Transmitir() {
+  Serial.println(Profesor);
+  Serial.println(Herramienta);
+  Serial.println(Evento);
+
+  
   str = origen + destino + "i" + String(Profesor);
   str.toCharArray(buf, sizeof(buf));
   vw_send((uint8_t *)buf, strlen(buf));
   vw_wait_tx();
-  Serial.print("HOLA");
+  //Serial.print("HOLA");
 
   str = origen + destino + "j" + String(Herramienta);
   str.toCharArray(buf, sizeof(buf));
