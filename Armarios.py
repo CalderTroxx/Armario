@@ -1,7 +1,5 @@
 ##########LIBRERIAS##########
 
-from asyncio import events
-from turtle import delay
 import mysql.connector #Importamos la librera con la cual nos comunicaremos con la base de datos.
 import serial #Importamos esta libreria para leer el puerto USB de la compu y asi leer los datos q nos ingresan.
 import time 
@@ -29,7 +27,6 @@ HerramientaAnterior = ""
 EventoAnterior = ""
 
 while(1):
-    delay(500)
     Profesor=serialArduino.readline()
     Herramienta=serialArduino.readline()
     Evento=serialArduino.readline()
