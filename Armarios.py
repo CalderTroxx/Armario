@@ -16,7 +16,7 @@ conexion=mysql.connector.connect( #Establecemos conexion con la base de datos (m
 
 ##########CONEXION ARDUINO##########
 
-serialArduino=serial.Serial("COM4",9600) #Establecemos conexion con el puerto USB, al cual el arduino esta conectado.
+serialArduino=serial.Serial("COM5",9600) #Establecemos conexion con el puerto USB, al cual el arduino esta conectado.
 time.sleep(1) #Esta funcion lo q hara es esperar 1 segundo para establecer la conexion.
 
 cursor1=conexion.cursor() #Hacemos conexion con la base de datos y asi dsp procedemos a mandarle datos.
@@ -39,16 +39,16 @@ while(1):
         Profesor=Profesor.decode('ascii') #Decoficamos el dato,binario, al codigo ascii.
         Profesor = Profesor.strip()
         match Profesor:
-            case "01":
-                Profesor = "Franco Valverde"
-            case "02":
-                Profesor = "Persona 2"
-            case "03":
-                Profesor = "Persona 3"
-            case "04":
-                Profesor = "Persona 4"
-            case "05":
-                Profesor = "Persona 5"
+            case "1":
+                Profesor = "David Quatricciochi"
+            case "2":
+                Profesor = "Santino Calderon"
+            case "3":
+                Profesor = "Maico Zurbriggen"
+            case "4":
+                Profesor = "Luciano Destefani"
+            case "5":
+                Profesor = "Alejo Ferreyra"
 
         Herramienta=Herramienta.decode('ascii') 
         Herramienta = Herramienta.strip()
